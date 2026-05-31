@@ -111,3 +111,57 @@ resource "google_dataform_repository" "bike_share_repo" {
     google_secret_manager_secret_iam_member.dataform_git_token_secret_accessor
   ]
 }
+
+
+resource "google_dataform_repository_release_config" "bike_share_daily_release" {
+  provider = google-beta
+
+  project    = var.project_id
+  region     = var.region
+  repository = google_dataform_repository.bike_share_repo.name
+
+  name          = "daily-release"
+  git_commitish = "master"
+
+  cron_schedule = "0 5 * * *"
+  time_zone     = "America/Vancouver"
+
+  code_compilation_config {
+    default_database = var.project_id
+    default_schema   = google_bigquery_dataset.bike_gold.dataset_id
+    default_location = var.region
+    assertion_schema = google_bigquery_dataset.bike_audit.dataset_id
+  }
+
+  depends_on = [
+    google_dataform_repository.bike_share_repo
+  ]
+}
+
+resource "google_dataform_repository_workflow_config" "bike_share_daily_gold_workflow" {
+  provider = google-beta
+
+  project    = var.project_id
+  region     = var.region
+  repository = google_dataform_repository.bike_share_repo.name
+
+  name           = "daily-gold-marts-workflow"
+  release_config = google_dataform_repository_release_config.bike_share_daily_release.id
+
+  cron_schedule = "0 6 * * *"
+  time_zone     = "America/Vancouver"
+
+  invocation_config {
+    included_tags                    = ["gold"]
+    transitive_dependencies_included = true
+
+    # These marts are full-refresh tables, not incremental tables.
+    fully_refresh_incremental_tables_enabled = false
+
+    service_account = google_service_account.dataform_sa.email
+  }
+
+  depends_on = [
+    google_dataform_repository_release_config.bike_share_daily_release
+  ]
+}
