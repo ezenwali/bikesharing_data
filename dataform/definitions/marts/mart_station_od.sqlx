@@ -1,35 +1,31 @@
 config {
-  type: "table",
-  database: "project-bd4d6787-b51f-43f0-8f5",
-  schema: "bike_gold",
-  name: "mart_station_od",
-  tags: ["gold", "od", "station"],
-  assertions: {
-    nonNull: ["trip_date", "start_station_id", "end_station_id"]
-  }
+    type: "table",
+    database: "project-bd4d6787-b51f-43f0-8f5",
+    schema: "bike_gold",
+    name: "mart_station_od",
+    tags: ["gold", "od", "station"],
+    assertions: {
+        nonNull: ["trip_date", "start_station_id", "end_station_id"]
+    }
 }
 
 SELECT
   trip_date,
-
   start_station_id,
   start_station_name,
   start_neighbourhood,
-
   end_station_id,
   end_station_name,
   end_neighbourhood,
-
   bike_type,
   user_type,
-
   COUNT(*) AS trip_count,
   ROUND(AVG(trip_duration_minutes), 2) AS avg_trip_duration_minutes,
-
   CURRENT_TIMESTAMP() AS mart_load_dt
-
-FROM ${ref("fact_trip")}
-WHERE is_valid_trip = TRUE
+FROM
+  ${ref("fact_trip")}
+WHERE
+  is_valid_trip = TRUE
 GROUP BY
   trip_date,
   start_station_id,
