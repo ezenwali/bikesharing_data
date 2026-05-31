@@ -132,7 +132,7 @@ All commands below are run from the project root unless stated otherwise.
 ### 1. Set environment variables
 
 ```bash
-export PROJECT_ID="project-bd4d8f5"
+export PROJECT_ID="project-bd4d6787-b51f-43f0-8f5"
 export REGION="us-central1"
 export ENV="dev"
 
@@ -200,7 +200,7 @@ pip install google-cloud-storage
 #### Generate fake bike trip events into the Cloud Storage raw trip landing path:
 ```bash
 python producers/fake_trip_stream.py \
-  --station-file sample_data/stations/stations.csv \
+  --station-file sample_data/stations.csv \
   --bucket $RAW_BUCKET \
   --prefix raw/trips \
   --events-per-batch 25 \

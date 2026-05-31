@@ -48,19 +48,19 @@ resource "google_project_iam_member" "dataproc_bigquery_read_session_user" {
 }
 
 resource "google_dataproc_cluster" "bike_share_cluster" {
-  name   = "bike-share-spark-cluster"
+  name    = "bike-share-spark-cluster"
   project = var.project_id
-  region = var.region
+  region  = var.region
 
   cluster_config {
     staging_bucket = google_storage_bucket.bike_share_temp_bucket.name
     temp_bucket    = google_storage_bucket.bike_share_temp_bucket.name
 
     gce_cluster_config {
-      subnetwork          = google_compute_subnetwork.bike_share_private_subnet.self_link
-      service_account     = google_service_account.dataproc_sa.email
-      internal_ip_only    = true
-      tags = [var.iap_ssh_tag]
+      subnetwork       = google_compute_subnetwork.bike_share_private_subnet.self_link
+      service_account  = google_service_account.dataproc_sa.email
+      internal_ip_only = true
+      tags             = [var.iap_ssh_tag]
       service_account_scopes = [
         "https://www.googleapis.com/auth/cloud-platform"
       ]

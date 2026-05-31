@@ -70,6 +70,16 @@ resource "google_bigquery_dataset_iam_member" "dataform_gold_editor" {
   member     = "serviceAccount:${google_service_account.dataform_sa.email}"
 }
 
+
+resource "google_secret_manager_secret_iam_member" "dataform_git_token_secret_accessor" {
+  project   = var.project_id
+  secret_id = "dev-github-oauthtoken-76ae3c"
+
+  role = "roles/secretmanager.secretAccessor"
+
+  member = "serviceAccount:${google_project_service_identity.dataform.email}"
+}
+
 # Optional: allow assertions/audit writes if you use bike_audit for Dataform assertions
 resource "google_bigquery_dataset_iam_member" "dataform_audit_editor" {
   project    = var.project_id
@@ -89,7 +99,7 @@ resource "google_dataform_repository" "bike_share_repo" {
   name    = "bike-share-dataform-repo"
 
   service_account = google_service_account.dataform_sa.email
-
+  deletion_policy = "FORCE"
   depends_on = [
     google_project_service.dataform,
     google_service_account_iam_member.dataform_service_agent_sa_user,
@@ -97,6 +107,7 @@ resource "google_dataform_repository" "bike_share_repo" {
     google_project_iam_member.dataform_bigquery_job_user,
     google_bigquery_dataset_iam_member.dataform_silver_viewer,
     google_bigquery_dataset_iam_member.dataform_gold_editor,
-    google_bigquery_dataset_iam_member.dataform_audit_editor
+    google_bigquery_dataset_iam_member.dataform_audit_editor,
+    google_secret_manager_secret_iam_member.dataform_git_token_secret_accessor
   ]
 }
