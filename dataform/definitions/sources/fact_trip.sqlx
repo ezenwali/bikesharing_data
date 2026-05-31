@@ -1,6 +1,6 @@
 config {
-  type: "declaration",
-  database: "project-bd4d6787-b51f-43f0-8f5",
-  schema: "bike_silver",
-  name: "fact_trip"
+    type: "declaration",
+    database: "project-bd4d6787-b51f-43f0-8f5",
+    schema: "bike_silver",
+    name: "fact_trip"
 }
