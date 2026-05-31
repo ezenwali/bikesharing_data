@@ -1,0 +1,26 @@
+station_id,station_name,latitude,longitude,capacity,neighbourhood,is_active,launch_date
+ST001,Waterfront Station,49.2859,-123.1113,35,Downtown,True,2020-05-01
+ST002,Science World,49.2734,-123.1039,27,False Creek,True,2020-05-01
+ST003,Yaletown Roundhouse,49.2746,-123.1218,31,Yaletown,True,2020-06-15
+ST004,Olympic Village,49.2667,-123.1166,29,Olympic Village,True,2020-06-15
+ST005,Kitsilano Beach,49.2725,-123.1554,25,Kitsilano,True,2021-04-10
+ST006,Granville Island,49.2707,-123.134,33,Fairview,True,2021-04-10
+ST007,Commercial Broadway,49.2626,-123.0697,37,Grandview-Woodland,True,2021-07-01
+ST008,Main Street Station,49.2732,-123.1004,30,Mount Pleasant,True,2021-07-01
+ST009,Stanley Park Loop,49.2974,-123.1362,24,West End,True,2022-03-20
+ST010,English Bay,49.286,-123.1425,28,West End,True,2022-03-20
+ST011,UBC Exchange,49.2665,-123.2499,40,UBC,True,2022-09-01
+ST012,Jericho Beach,49.2729,-123.2,22,West Point Grey,True,2022-09-01
+ST013,Mount Pleasant Centre,49.2635,-123.1007,32,Mount Pleasant,True,2023-02-15
+ST014,Vancouver City Hall,49.2609,-123.1139,34,Fairview,True,2023-02-15
+ST015,Oakridge Centre,49.2329,-123.1175,26,Oakridge,True,2023-05-01
+ST016,Queen Elizabeth Park,49.2417,-123.1123,23,Riley Park,True,2023-05-01
+ST017,Joyce Collingwood,49.2384,-123.0318,30,Renfrew-Collingwood,True,2023-08-10
+ST018,Trout Lake,49.2555,-123.0617,21,Kensington-Cedar Cottage,True,2023-08-10
+ST019,Pacific Central Station,49.2737,-123.0986,36,Strathcona,True,2024-01-15
+ST020,Lonsdale Quay,49.3103,-123.0836,38,North Vancouver,True,2024-04-01
+ST021,Brentwood Town Centre,49.2663,-123.0007,35,Burnaby,True,2024-04-01
+ST022,Metrotown Station,49.2258,-123.0039,42,Burnaby,True,2024-06-01
+ST023,Richmond Brighouse,49.1681,-123.1362,36,Richmond,True,2024-06-01
+ST024,Lafarge Lake Douglas,49.2856,-122.7916,32,Coquitlam,True,2024-09-01
+ST025,Inactive Test Station,49.25,-123.12,20,Test Area,False,2024-12-01

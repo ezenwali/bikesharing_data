@@ -1,0 +1,36 @@
+config {
+  type: "table",
+  database: "project-bd4d6787-b51f-43f0-8f5",
+  schema: "bike_gold",
+  name: "mart_hourly_demand",
+  tags: ["gold", "hourly", "demand"],
+  assertions: {
+    nonNull: ["trip_date", "trip_hour"]
+  }
+}
+
+SELECT
+  trip_date,
+  trip_hour,
+  start_neighbourhood,
+  bike_type,
+  user_type,
+
+  COUNT(*) AS trip_count,
+  COUNT(DISTINCT bike_id) AS active_bikes,
+  COUNT(DISTINCT user_id) AS active_users,
+
+  ROUND(AVG(trip_duration_minutes), 2) AS avg_trip_duration_minutes,
+
+  SUM(CASE WHEN is_round_trip THEN 1 ELSE 0 END) AS round_trip_count,
+
+  CURRENT_TIMESTAMP() AS mart_load_dt
+
+FROM ${ref("fact_trip")}
+WHERE is_valid_trip = TRUE
+GROUP BY
+  trip_date,
+  trip_hour,
+  start_neighbourhood,
+  bike_type,
+  user_type

@@ -1,0 +1,241 @@
+# GCP Bike Share Analytics Lakehouse
+
+This project is an end-to-end GCP data engineering pipeline for a bike-sharing system.
+
+It ingests **batch station dimension data** and **simulated streaming bike trip events**, processes them with **Dataproc / PySpark**, stores curated data in **BigQuery**, and builds analytics-ready gold marts using **Dataform**.
+
+The project demonstrates practical GCP data engineering skills using:
+
+- Cloud Storage
+- Dataproc / PySpark
+- PySpark Structured Streaming
+- BigQuery
+- Dataform
+- Cloud Composer
+- Cloud Logging and Monitoring
+- Terraform
+
+---
+
+## Project Goal
+
+The goal is to build a simple but realistic bike-share analytics platform that can answer questions like:
+
+- How many trips happened each day?
+- Which stations are busiest?
+- Which stations have more arrivals than departures?
+- What are the most common origin-destination pairs?
+- How often are bikes used?
+- How do e-bikes compare with classic bikes?
+
+---
+
+## Infrastructure Architecture
+
+![Infrastructure Architecture](./docs/images/arch.png)
+
+The infrastructure is deployed inside a GCP project.
+
+Compute-based services such as **Dataproc/Spark** and **Cloud Composer** run within the VPC/private subnet. Managed services such as **BigQuery**, **Cloud Storage**, **Dataform**, and **Cloud Logging/Monitoring** are accessed through Google APIs.
+
+Cloud Storage is used as the raw bronze layer. BigQuery is used for curated silver tables and gold analytics marts.
+
+---
+
+## Data Flow Architecture
+
+![Data Flow Architecture](./docs/images/data_arch.png)
+
+The pipeline has two main data paths:
+
+1. **Batch station ingestion**  
+   Station CSV files are uploaded to Cloud Storage. Dataproc PySpark reads the files directly from Cloud Storage, cleans the station data, and writes the result to BigQuery silver as a station dimension table.
+
+2. **Simulated streaming trip ingestion**  
+   A Python producer generates fake bike trip events as JSON files and writes them into a Cloud Storage landing path. A PySpark Structured Streaming job reads the new trip event files, cleans and validates the events, and writes the result to BigQuery silver as a trip fact table.
+
+After silver tables are created, **Dataform** builds gold analytics marts for dashboarding and reporting.
+
+---
+
+## Architecture Summary
+
+| Layer | Service | Purpose |
+|---|---|---|
+| Raw / Bronze | Cloud Storage | Stores station CSV files and raw trip event JSON files |
+| Processing | Dataproc / PySpark | Reads raw files, cleans data, and builds silver tables |
+| Streaming Processing | PySpark Structured Streaming | Processes incoming trip event files from Cloud Storage |
+| Silver | BigQuery | Stores cleaned dimensions and fact tables |
+| Gold | Dataform | Builds analytics-ready marts |
+| Orchestration | Cloud Composer | Runs scheduled pipeline jobs |
+| Monitoring | Cloud Logging / Monitoring | Tracks pipeline health |
+| Infrastructure | Terraform | Provisions GCP resources |
+
+---
+
+## Data Sources
+
+### Station Dimension Data
+
+Station data is loaded as a CSV file into Cloud Storage.
+
+Example:
+
+```csv
+station_id,station_name,latitude,longitude,capacity,neighbourhood,is_active
+ST001,Waterfront Station,49.2859,-123.1113,35,Downtown,true
+ST002,Science World,49.2734,-123.1039,27,False Creek,true
+```
+## Repository Structure
+```
+gcp-bike-share-analytics-lakehouse/
+│
+├── README.md
+├── configs/
+├── producers/
+│   └── fake_trip_stream/
+├── dataproc/
+│   ├── jobs/
+│   └── common/
+├── dataform/
+│   ├── definitions/
+│   └── assertions/
+├── orchestration/
+│   └── composer_dags/
+├── sql/
+│   ├── ddl/
+│   └── checks/
+├── infra/
+│   └── terraform/
+├── sample_data/
+│   └── stations/
+├── docs/
+│   └── images/
+└── dashboards/
+```
+
+---
+
+## How to Run the Project
+
+This project is run in four main phases:
+
+1. Provision GCP infrastructure with Terraform
+2. Load station dimension data with Dataproc PySpark
+3. Land simulated trip events and process them with PySpark Structured Streaming
+4. Build gold marts with Dataform
+
+All commands below are run from the project root unless stated otherwise.
+
+---
+
+### 1. Set environment variables
+
+```bash
+export PROJECT_ID="project-bd4d8f5"
+export REGION="us-central1"
+export ENV="dev"
+
+export RAW_BUCKET="${PROJECT_ID}-bike-share-raw-${ENV}"
+export TEMP_BUCKET="${PROJECT_ID}-bike-share-temp-${ENV}"
+
+export DATAPROC_CLUSTER="bike-share-spark-cluster"
+
+export SILVER_DATASET="bike_silver"
+export GOLD_DATASET="bike_gold"
+
+export DATAFORM_REPO="bike-share-dataform-repo"
+export DATAFORM_WORKFLOW_CONFIG="bike-share-gold-workflow"
+
+
+gcloud config set project $PROJECT_ID
+
+gcloud auth login
+
+cd infra
+
+terraform init
+terraform fmt -recursive
+terraform validate
+terraform plan -out=tfplan
+terraform apply tfplan
+
+cd ../..
+```
+### This provisions the main GCP resources, including:
+
+- Cloud Storage buckets
+- BigQuery datasets
+- Dataproc cluster
+- Service accounts and IAM
+- Dataform repository resources
+- Network resources
+
+#### Confirm the station CSV was uploaded to Cloud Storage:
+
+```bash
+gsutil ls gs://$RAW_BUCKET/raw/stations/stations.csv
+```
+
+### Build the station dimension table
+```bash
+gcloud dataproc jobs submit pyspark dataproc/jobs/build_dim_station.py \
+  --cluster $DATAPROC_CLUSTER \
+  --region $REGION \
+  --project $PROJECT_ID \
+  -- \
+  --project-id $PROJECT_ID \
+  --station-path gs://$RAW_BUCKET/raw/stations/stations.csv \
+  --silver-dataset $SILVER_DATASET \
+  --temp-bucket $TEMP_BUCKET
+```
+
+
+### Generate simulated trip events
+```bash
+python -m venv .venv
+source .venv/bin/activate
+pip install google-cloud-storage
+```
+#### Generate fake bike trip events into the Cloud Storage raw trip landing path:
+```bash
+python producers/fake_trip_stream.py \
+  --station-file sample_data/stations/stations.csv \
+  --bucket $RAW_BUCKET \
+  --prefix raw/trips \
+  --events-per-batch 25 \
+  --sleep-seconds 10 \
+  --max-batches 10
+```
+
+### Process trip events with PySpark Structured Streaming
+
+```bash
+gcloud dataproc jobs submit pyspark dataproc/jobs/stream_fact_trip_from_gcs.py \
+  --cluster $DATAPROC_CLUSTER \
+  --region $REGION \
+  --project $PROJECT_ID \
+  -- \
+  --project-id $PROJECT_ID \
+  --input-path gs://$RAW_BUCKET/raw/trips/ \
+  --checkpoint-path gs://$TEMP_BUCKET/checkpoints/fact_trip_v1 \
+  --silver-dataset $SILVER_DATASET \
+  --temp-bucket $TEMP_BUCKET \
+  --trigger-once
+```
+
+#### Process continuous mode
+```bash
+gcloud dataproc jobs submit pyspark dataproc/jobs/stream_fact_trip_from_gcs.py \
+  --cluster $DATAPROC_CLUSTER \
+  --region $REGION \
+  --project $PROJECT_ID \
+  --async \
+  -- \
+  --project-id $PROJECT_ID \
+  --input-path gs://$RAW_BUCKET/raw/trips/ \
+  --checkpoint-path gs://$TEMP_BUCKET/checkpoints/fact_trip_continuous \
+  --silver-dataset $SILVER_DATASET \
+  --temp-bucket $TEMP_BUCKET \
+  --processing-time "30 seconds"
+```

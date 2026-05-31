@@ -1,0 +1,64 @@
+config {
+  type: "table",
+  database: "project-bd4d6787-b51f-43f0-8f5",
+  schema: "bike_gold",
+  name: "mart_station_daily_activity",
+  tags: ["gold", "station", "daily"],
+  assertions: {
+    nonNull: ["trip_date", "station_id"]
+  }
+}
+
+WITH starts AS (
+  SELECT
+    trip_date,
+    start_station_id AS station_id,
+    start_station_name AS station_name,
+    start_neighbourhood AS neighbourhood,
+    COUNT(*) AS trip_starts,
+    AVG(trip_duration_minutes) AS avg_start_trip_duration_minutes
+  FROM ${ref("fact_trip")}
+  WHERE is_valid_trip = TRUE
+  GROUP BY
+    trip_date,
+    start_station_id,
+    start_station_name,
+    start_neighbourhood
+),
+
+ends AS (
+  SELECT
+    trip_date,
+    end_station_id AS station_id,
+    end_station_name AS station_name,
+    end_neighbourhood AS neighbourhood,
+    COUNT(*) AS trip_ends,
+    AVG(trip_duration_minutes) AS avg_end_trip_duration_minutes
+  FROM ${ref("fact_trip")}
+  WHERE is_valid_trip = TRUE
+  GROUP BY
+    trip_date,
+    end_station_id,
+    end_station_name,
+    end_neighbourhood
+)
+
+SELECT
+  COALESCE(s.trip_date, e.trip_date) AS trip_date,
+  COALESCE(s.station_id, e.station_id) AS station_id,
+  COALESCE(s.station_name, e.station_name) AS station_name,
+  COALESCE(s.neighbourhood, e.neighbourhood) AS neighbourhood,
+
+  COALESCE(s.trip_starts, 0) AS trip_starts,
+  COALESCE(e.trip_ends, 0) AS trip_ends,
+  COALESCE(s.trip_starts, 0) - COALESCE(e.trip_ends, 0) AS net_outflow,
+
+  ROUND(s.avg_start_trip_duration_minutes, 2) AS avg_start_trip_duration_minutes,
+  ROUND(e.avg_end_trip_duration_minutes, 2) AS avg_end_trip_duration_minutes,
+
+  CURRENT_TIMESTAMP() AS mart_load_dt
+
+FROM starts s
+FULL OUTER JOIN ends e
+  ON s.trip_date = e.trip_date
+  AND s.station_id = e.station_id

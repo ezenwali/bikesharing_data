@@ -1,0 +1,5 @@
+defaultProject: project-bd4d6787-b51f-43f0-8f5
+defaultLocation: us-central1
+defaultDataset: bike_gold
+defaultAssertionDataset: bike_audit
+dataformCoreVersion: "3.0.0"
